@@ -28,7 +28,8 @@ $config = [ordered]@{
   apiBaseUrl = $tunnelUrl
 }
 $json = $config | ConvertTo-Json -Depth 4
-Set-Content -Path $ConfigPath -Value ($json + "`n") -Encoding UTF8
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText((Resolve-Path $ConfigPath), ($json + "`n"), $utf8NoBom)
 
 Run "git diff -- $ConfigPath"
 
