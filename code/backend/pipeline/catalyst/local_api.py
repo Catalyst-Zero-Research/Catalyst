@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Any
@@ -56,6 +57,85 @@ def _repo_root() -> Path:
 @lru_cache(maxsize=1)
 def get_store() -> LocalCatalystStore:
     return LocalCatalystStore(_repo_root(), os.getenv("CATALYST_SOURCE_RELEASE", "v2025.09.25"))
+
+
+@lru_cache(maxsize=1)
+def cached_store_catalog() -> dict:
+    return get_store().catalog()
+
+
+@lru_cache(maxsize=64)
+def cached_graph_overview(limit_clusters: int) -> dict:
+    return get_store().graph_overview(limit_clusters=limit_clusters)
+
+
+@lru_cache(maxsize=64)
+def cached_graph_view(mode: str, limit_nodes: int, include_elements: bool, include_clusters: bool) -> dict:
+    return get_store().graph_view(
+        limit_nodes=limit_nodes,
+        mode=mode,
+        include_elements=include_elements,
+        include_clusters=include_clusters,
+    )
+
+
+@lru_cache(maxsize=32)
+def cached_graph_materials(limit_materials: int, include_elements: bool, include_clusters: bool) -> dict:
+    return get_store().graph_materials(
+        limit_materials=limit_materials,
+        include_elements=include_elements,
+        include_clusters=include_clusters,
+    )
+
+
+@lru_cache(maxsize=2048)
+def cached_material(material_id: str) -> dict | None:
+    return get_store().get_material(material_id)
+
+
+@lru_cache(maxsize=1024)
+def cached_evidence(material_id: str) -> dict:
+    return get_store().evidence(material_id)
+
+
+@lru_cache(maxsize=1024)
+def cached_neighborhood(material_id: str, depth: int, limit_nodes: int) -> dict:
+    return get_store().neighborhood(material_id, depth=depth, limit_nodes=limit_nodes)
+
+
+@lru_cache(maxsize=1024)
+def cached_structure(material_id: str) -> dict | None:
+    return get_store().structure(material_id)
+
+
+@lru_cache(maxsize=1024)
+def cached_material_details(material_id: str, sections_key: str, limit: int, downsample: bool) -> dict | None:
+    sections = _split_csv(sections_key) or None
+    return get_store().material_details(material_id, sections=sections, limit=limit, downsample=downsample)
+
+
+@lru_cache(maxsize=1024)
+def cached_workspace(material_id: str) -> dict | None:
+    return get_store().workspace(material_id)
+
+
+@lru_cache(maxsize=2048)
+def cached_edge(edge_id: str) -> dict | None:
+    return get_store().edge(edge_id)
+
+
+def clear_read_caches() -> None:
+    cached_store_catalog.cache_clear()
+    cached_graph_overview.cache_clear()
+    cached_graph_view.cache_clear()
+    cached_graph_materials.cache_clear()
+    cached_material.cache_clear()
+    cached_evidence.cache_clear()
+    cached_neighborhood.cache_clear()
+    cached_structure.cache_clear()
+    cached_material_details.cache_clear()
+    cached_workspace.cache_clear()
+    cached_edge.cache_clear()
 
 
 @lru_cache(maxsize=1)
@@ -115,7 +195,7 @@ def health() -> dict[str, str]:
 @app.get("/catalog", response_model=CatalogResponse)
 def catalog() -> dict:
     settings = get_settings()
-    payload = get_store().catalog()
+    payload = deepcopy(cached_store_catalog())
     provider_status = configured_provider_status(settings)
     payload["provider_status"] = {
         "llm_configured": provider_status["llm_configured"],
@@ -246,7 +326,7 @@ def _deep_merge(base: dict[str, Any], patch: dict[str, Any]) -> None:
 
 @app.get("/graph/overview", response_model=FlexibleResponse)
 def graph_overview(limit_clusters: int = Query(250, ge=10, le=1000)) -> dict:
-    return get_store().graph_overview(limit_clusters=limit_clusters)
+    return cached_graph_overview(limit_clusters)
 
 
 @app.get("/graph/view", response_model=FlexibleResponse)
@@ -256,12 +336,7 @@ def graph_view(
     include_elements: bool = Query(False),
     include_clusters: bool = Query(False),
 ) -> dict:
-    return get_store().graph_view(
-        limit_nodes=limit_nodes,
-        mode=mode,
-        include_elements=include_elements,
-        include_clusters=include_clusters,
-    )
+    return cached_graph_view(mode, limit_nodes, include_elements, include_clusters)
 
 
 @app.get("/graph/materials", response_model=FlexibleResponse)
@@ -270,11 +345,7 @@ def graph_materials(
     include_elements: bool = Query(True),
     include_clusters: bool = Query(True),
 ) -> dict:
-    return get_store().graph_materials(
-        limit_materials=limit_materials,
-        include_elements=include_elements,
-        include_clusters=include_clusters,
-    )
+    return cached_graph_materials(limit_materials, include_elements, include_clusters)
 
 
 @app.get("/graph/nodes/{node_id:path}", response_model=FlexibleResponse)
@@ -300,7 +371,7 @@ def random_material(mode: str = Query("curated", pattern="^(curated|any)$")) -> 
 
 @app.get("/materials/{material_id}", response_model=FlexibleResponse)
 def get_material(material_id: str) -> dict:
-    material = get_store().get_material(material_id)
+    material = cached_material(material_id)
     if not material:
         raise HTTPException(status_code=404, detail=f"Material not found: {material_id}")
     return material
@@ -308,10 +379,10 @@ def get_material(material_id: str) -> dict:
 
 @app.get("/materials/{material_id}/evidence", response_model=FlexibleResponse)
 def get_evidence(material_id: str) -> dict:
-    material = get_store().get_material(material_id)
+    material = cached_material(material_id)
     if not material:
         raise HTTPException(status_code=404, detail=f"Material not found: {material_id}")
-    return get_store().evidence(material_id)
+    return cached_evidence(material_id)
 
 
 @app.get("/materials/{material_id}/neighborhood", response_model=FlexibleResponse)
@@ -320,7 +391,7 @@ def get_neighborhood(
     depth: int = Query(1, ge=1, le=5),
     limit_nodes: int = Query(80, ge=10, le=250),
 ) -> dict:
-    graph = get_store().neighborhood(material_id, depth=depth, limit_nodes=limit_nodes)
+    graph = cached_neighborhood(material_id, depth, limit_nodes)
     if not graph["nodes"]:
         raise HTTPException(status_code=404, detail=f"Material not found: {material_id}")
     return graph
@@ -328,7 +399,7 @@ def get_neighborhood(
 
 @app.get("/materials/{material_id}/structure", response_model=FlexibleResponse)
 def get_structure(material_id: str) -> dict:
-    structure = get_store().structure(material_id)
+    structure = cached_structure(material_id)
     if not structure:
         raise HTTPException(status_code=404, detail=f"Material not found: {material_id}")
     return structure
@@ -341,12 +412,8 @@ def get_material_details(
     limit: int = Query(25, ge=1, le=100),
     downsample: bool = True,
 ) -> dict:
-    payload = get_store().material_details(
-        material_id,
-        sections=_split_csv(sections) or None,
-        limit=limit,
-        downsample=downsample,
-    )
+    sections_key = ",".join(_split_csv(sections))
+    payload = cached_material_details(material_id, sections_key, limit, downsample)
     if not payload:
         raise HTTPException(status_code=404, detail=f"Material not found: {material_id}")
     return payload
@@ -354,7 +421,7 @@ def get_material_details(
 
 @app.get("/materials/{material_id}/workspace", response_model=FlexibleResponse)
 def get_workspace(material_id: str) -> dict:
-    workspace = get_store().workspace(material_id)
+    workspace = cached_workspace(material_id)
     if not workspace:
         raise HTTPException(status_code=404, detail=f"Material not found: {material_id}")
     return workspace
@@ -362,7 +429,7 @@ def get_workspace(material_id: str) -> dict:
 
 @app.get("/edges/{edge_id:path}", response_model=FlexibleResponse)
 def get_edge(edge_id: str) -> dict:
-    edge = get_store().edge(edge_id)
+    edge = cached_edge(edge_id)
     if not edge:
         raise HTTPException(status_code=404, detail=f"Edge not found: {edge_id}")
     return edge
@@ -455,6 +522,7 @@ def patch_runtime_settings(request: SettingsPatchRequest) -> dict:
     settings = CatalystSettings.model_validate(current)
     save_settings(_repo_root(), settings)
     get_settings.cache_clear()
+    clear_read_caches()
     settings = get_settings()
     return {
         "settings": settings.model_dump(mode="json"),
