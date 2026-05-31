@@ -37,7 +37,6 @@ jobs:
         working-directory: code/frontend
         env:
           GITHUB_PAGES: "true"
-          VITE_CATALYST_API_BASE: https://beside-plymouth-thats-away.trycloudflare.com
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

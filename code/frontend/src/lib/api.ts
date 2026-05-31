@@ -1,9 +1,32 @@
 const defaultApiBase = window.location.port === '5173' ? 'http://127.0.0.1:8766' : '';
-export const API_BASE = import.meta.env.VITE_CATALYST_API_BASE || defaultApiBase;
+const buildApiBase = import.meta.env.VITE_CATALYST_API_BASE || '';
+
+type RuntimeConfig = {
+  apiBaseUrl?: string;
+};
+
+let apiBasePromise: Promise<string> | null = null;
+
+async function getApiBase(): Promise<string> {
+  if (buildApiBase) return buildApiBase;
+  if (!apiBasePromise) {
+    apiBasePromise = fetch(`${import.meta.env.BASE_URL}runtime-config.json`, { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) return defaultApiBase;
+        const config = (await res.json()) as RuntimeConfig;
+        return config.apiBaseUrl || defaultApiBase;
+      })
+      .catch(() => defaultApiBase);
+  }
+  return apiBasePromise;
+}
+
+export const API_BASE = buildApiBase || defaultApiBase;
 
 // ─── typed fetch helper ────────────────────────────────────────────────────
 async function apiFetch<T = any>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, init);
+  const apiBase = await getApiBase();
+  const res = await fetch(`${apiBase}${path}`, init);
   if (!res.ok) {
     let detail = res.statusText;
     try {

@@ -77,8 +77,32 @@ python -m catalyst.local_api
 cloudflared tunnel --url http://127.0.0.1:8766
 ```
 
-For the final form, use a named tunnel/custom hostname instead of a temporary
-quick tunnel if possible.
+For the final form, a named tunnel/custom hostname is best. If no domain is
+available, use the free quick-tunnel fallback below.
+
+## Free GitHub Pages Fallback
+
+GitHub Pages serves the static UI at:
+
+```text
+https://catalyst-zero-research.github.io/Catalyst/
+```
+
+Because free Cloudflare quick tunnels change URL after restarts, the frontend
+loads the backend URL from:
+
+```text
+code/frontend/public/runtime-config.json
+```
+
+When the tunnel changes, run this from the repo on the Windows machine:
+
+```powershell
+.\scripts\update-pages-runtime-config.ps1
+```
+
+The script reads the current `trycloudflare.com` URL from `mini`, updates the
+runtime config, commits, pushes, and GitHub Pages redeploys automatically.
 
 ## Security Rules
 
@@ -95,5 +119,6 @@ quick tunnel if possible.
   the demo video and form.
 - If the server RAM is too tight: submit a GitHub/Drive package link plus a demo
   video, and host only a static landing/demo page.
-- If GitHub Pages is used: it should host only the built frontend, with
-  `VITE_API_BASE_URL` pointed at the tunneled backend.
+- If GitHub Pages is used: it should host only the built frontend. The demo
+  backend URL should come from `runtime-config.json`, not from a hardcoded build
+  environment variable.

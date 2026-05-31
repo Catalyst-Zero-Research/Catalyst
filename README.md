@@ -97,6 +97,15 @@ python code/backend/pipeline/scripts/check_ship_ready.py
 - Runtime logs, sessions, exports, and local settings are ignored.
 - Real provider keys are never committed. Use `.env.example` as the template.
 - GitHub Pages builds the static UI and connects to the hosted demo backend.
+- The Pages UI reads `code/frontend/public/runtime-config.json` at startup for
+  the backend URL. If the free Cloudflare quick tunnel changes, run:
+
+```powershell
+.\scripts\update-pages-runtime-config.ps1
+```
+
+The script reads the active tunnel URL from `mini`, commits the updated runtime
+config, and pushes to trigger a Pages redeploy.
 
 ## Docs
 
