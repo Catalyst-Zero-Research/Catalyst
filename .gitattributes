@@ -1,0 +1,12 @@
+# Large Catalyst data artifacts exceed normal GitHub blob limits.
+# Use Git LFS before adding these files to a public repository:
+#   git lfs install
+#   git add .gitattributes data/
+data/**/*.jsonl filter=lfs diff=lfs merge=lfs -text
+data/**/*.parquet filter=lfs diff=lfs merge=lfs -text
+data/**/*.arrow filter=lfs diff=lfs merge=lfs -text
+data/**/*.duckdb filter=lfs diff=lfs merge=lfs -text
+data/**/*.sqlite filter=lfs diff=lfs merge=lfs -text
+data/**/*.db filter=lfs diff=lfs merge=lfs -text
+*.pptx filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text

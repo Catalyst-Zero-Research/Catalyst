@@ -1,0 +1,43 @@
+{
+  "created_at": "2026-05-28T00:00:00+00:00",
+  "product_name": "Catalyst",
+  "providers": {
+    "active_provider": null,
+    "models": {},
+    "provider_order": [
+      "gemini",
+      "groq",
+      "mistral",
+      "nvidia",
+      "ollama_cloud",
+      "ollama"
+    ]
+  },
+  "research": {
+    "allow_pdf_ingest": true,
+    "allow_url_ingest": true,
+    "enabled": false,
+    "sources": [
+      "openalex",
+      "semantic_scholar",
+      "arxiv",
+      "crossref",
+      "pubmed",
+      "web"
+    ]
+  },
+  "runtime": {
+    "api_host": "127.0.0.1",
+    "api_port": 8766,
+    "source_release": "v2025.09.25",
+    "ui_host": "127.0.0.1",
+    "ui_port": 5173
+  },
+  "sessions": {
+    "hydrate_tool_traces_into_context": false,
+    "persist_raw_messages": true,
+    "persist_tool_traces": true,
+    "restore_last_session": true
+  },
+  "version": 1
+}

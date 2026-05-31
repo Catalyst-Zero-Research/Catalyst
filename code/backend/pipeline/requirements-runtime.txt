@@ -1,0 +1,8 @@
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2.0
+pandas>=2.0
+pyarrow>=15.0
+duckdb>=1.0
+pymatgen>=2024.1.1
+tqdm>=4.66

@@ -1,0 +1,121 @@
+{
+  "tools": [
+    {
+      "name": "resolve_material",
+      "description": "Resolve a formula or Materials Project id to a Catalyst material id.",
+      "parameters": {
+        "query": "string: formula, mp-id, or free-text material mention"
+      },
+      "returns": "material_id or null",
+      "ui_safe": false
+    },
+    {
+      "name": "search_materials",
+      "description": "Search and filter the local Catalyst materials snapshot.",
+      "parameters": {
+        "query": "string",
+        "limit": "integer",
+        "elements": "string[]",
+        "chemsys": "string",
+        "stable": "boolean",
+        "metal": "boolean",
+        "magnetic": "boolean",
+        "band_gap_min": "number",
+        "band_gap_max": "number"
+      },
+      "returns": "ranked local material search results",
+      "ui_safe": false
+    },
+    {
+      "name": "get_material_workspace",
+      "description": "Load grounded properties, evidence, and graph context for one material.",
+      "parameters": {
+        "material_id": "string: local material id, mp-id, or formula"
+      },
+      "returns": "workspace summary, evidence, properties, and graph slice",
+      "ui_safe": false
+    },
+    {
+      "name": "get_neighborhood",
+      "description": "Load directly connected graph neighbors for one material.",
+      "parameters": {
+        "material_id": "string: local material id, mp-id, or formula"
+      },
+      "returns": "neighbor nodes and edges",
+      "ui_safe": false
+    },
+    {
+      "name": "inspect_edge",
+      "description": "Inspect one graph edge by id.",
+      "parameters": {
+        "edge_id": "string"
+      },
+      "returns": "grounded edge detail",
+      "ui_safe": false
+    },
+    {
+      "name": "screen_candidates",
+      "description": "Rank candidate materials for a natural-language requirement.",
+      "parameters": {
+        "requirement": "string",
+        "limit": "integer",
+        "include_research_candidates": "boolean"
+      },
+      "returns": "parsed requirements and ranked candidates",
+      "ui_safe": false
+    },
+    {
+      "name": "compare_materials",
+      "description": "Compare two or more local material ids.",
+      "parameters": {
+        "material_ids": "string[]",
+        "include_evidence": "boolean",
+        "include_edges": "boolean"
+      },
+      "returns": "comparison table data and evidence",
+      "ui_safe": false
+    },
+    {
+      "name": "select_material",
+      "description": "Ask the UI to select, highlight, zoom to, and inspect one material.",
+      "parameters": {
+        "material_id": "string: local material id, mp-id, or formula",
+        "open_inspector": "boolean"
+      },
+      "returns": "ui_actions for graph/workspace focus",
+      "ui_safe": true
+    },
+    {
+      "name": "export_subgraph",
+      "description": "Export a grounded subgraph for selected material ids.",
+      "parameters": {
+        "material_ids": "string[]",
+        "include_evidence": "boolean",
+        "include_edge_details": "boolean"
+      },
+      "returns": "export payload",
+      "ui_safe": true
+    },
+    {
+      "name": "start_research",
+      "description": "Start literature/research mode when local data is insufficient.",
+      "parameters": {
+        "query": "string",
+        "sources": "string[]",
+        "limit": "integer"
+      },
+      "returns": "research run status",
+      "ui_safe": true
+    },
+    {
+      "name": "ingest_url",
+      "description": "Ingest a URL into local research mode when enabled.",
+      "parameters": {
+        "url": "string",
+        "purpose": "string"
+      },
+      "returns": "ingest status",
+      "ui_safe": true
+    }
+  ]
+}

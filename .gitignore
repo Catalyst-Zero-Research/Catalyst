@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# JavaScript
+node_modules/
+dist/
+.vite/
+
+# Catalyst local runtime state
+data/processed/
+data/local/settings.json
+data/local/logs/
+data/local/exports/
+data/local/sessions/
+data/local/candidate_sets/
+data/local/research_candidates/
+data/local/research_runs/
+data/local/research_sources/
+data/local/*.pids.json
+data/local/agent/compiled_context.*
+
+# Generated graphify scratch snapshots.
+graphify-out/
+
+# Local Codex/agent scratch
+AGENTS.md
+.agents/
+.codex/
+.codex-run/
+_backups/
+docs/archive/
+docs/ui/
+
+# Local secrets/config
+*.env
+.env*
+!.env.example
+data/local/secrets.json
