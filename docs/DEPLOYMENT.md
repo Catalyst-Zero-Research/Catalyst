@@ -89,10 +89,10 @@ https://catalyst-zero-research.github.io/Catalyst/
 ```
 
 Because free Cloudflare quick tunnels change URL after restarts, the frontend
-loads the backend URL from:
+loads the backend URL from the deployed `runtime-config.json` file:
 
 ```text
-code/frontend/public/runtime-config.json
+runtime-config.json
 ```
 
 When the tunnel changes, run this from the repo on the Windows machine:
@@ -101,8 +101,10 @@ When the tunnel changes, run this from the repo on the Windows machine:
 .\scripts\update-pages-runtime-config.ps1
 ```
 
-The script reads the current `trycloudflare.com` URL from `mini`, updates the
-runtime config, commits, pushes, and GitHub Pages redeploys automatically.
+The script reads the current quick-tunnel URL from `mini`, updates the
+`CATALYST_API_BASE_URL` GitHub repo secret, and triggers a GitHub Pages redeploy.
+The committed `code/frontend/public/runtime-config.json` stays blank so the
+backend tunnel is not exposed in the repository.
 
 ## Security Rules
 
@@ -120,5 +122,5 @@ runtime config, commits, pushes, and GitHub Pages redeploys automatically.
 - If the server RAM is too tight: submit a GitHub/Drive package link plus a demo
   video, and host only a static landing/demo page.
 - If GitHub Pages is used: it should host only the built frontend. The demo
-  backend URL should come from `runtime-config.json`, not from a hardcoded build
-  environment variable.
+  backend URL should come from deployed `runtime-config.json`, generated from a
+  GitHub secret, not from a committed tunnel URL.

@@ -4,8 +4,7 @@ Catalyst is an AI-native materials discovery workspace for moving from a rough
 materials requirement to grounded candidates, graph context, evidence, and
 agent-assisted inspection.
 
-[Live demo](https://beside-plymouth-thats-away.trycloudflare.com) ·
-[GitHub Pages UI](https://catalyst-zero-research.github.io/Catalyst/)
+[Live demo](https://catalyst-zero-research.github.io/Catalyst/)
 
 ## What It Does
 
@@ -97,15 +96,17 @@ python code/backend/pipeline/scripts/check_ship_ready.py
 - Runtime logs, sessions, exports, and local settings are ignored.
 - Real provider keys are never committed. Use `.env.example` as the template.
 - GitHub Pages builds the static UI and connects to the hosted demo backend.
-- The Pages UI reads `code/frontend/public/runtime-config.json` at startup for
-  the backend URL. If the free Cloudflare quick tunnel changes, run:
+- The Pages UI reads `runtime-config.json` at startup for the backend URL. The
+  repository keeps this file blank; GitHub Actions injects the live value from
+  the `CATALYST_API_BASE_URL` repo secret during deploy. If the free Cloudflare
+  quick tunnel changes, run:
 
 ```powershell
 .\scripts\update-pages-runtime-config.ps1
 ```
 
-The script reads the active tunnel URL from `mini`, commits the updated runtime
-config, and pushes to trigger a Pages redeploy.
+The script reads the active tunnel URL from `mini`, updates the GitHub secret,
+and triggers a Pages redeploy.
 
 ## Docs
 

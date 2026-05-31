@@ -38,6 +38,13 @@ jobs:
         env:
           GITHUB_PAGES: "true"
 
+      - name: Configure runtime backend
+        if: ${{ secrets.CATALYST_API_BASE_URL != '' }}
+        run: |
+          node -e "const fs=require('fs'); fs.writeFileSync('code/frontend/dist/runtime-config.json', JSON.stringify({ apiBaseUrl: process.env.CATALYST_API_BASE_URL }, null, 2) + '\n')"
+        env:
+          CATALYST_API_BASE_URL: ${{ secrets.CATALYST_API_BASE_URL }}
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

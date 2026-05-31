@@ -1,8 +1,7 @@
 param(
   [string]$HostAlias = "mini",
   [string]$Repo = "Catalyst-Zero-Research/Catalyst",
-  [string]$ConfigPath = "code/frontend/public/runtime-config.json",
-  [switch]$NoPush
+  [switch]$NoDeploy
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,24 +26,13 @@ Write-Host "Current tunnel: $tunnelUrl"
 $config = [ordered]@{
   apiBaseUrl = $tunnelUrl
 }
-$json = $config | ConvertTo-Json -Depth 4
-$utf8NoBom = New-Object System.Text.UTF8Encoding $false
-[System.IO.File]::WriteAllText((Resolve-Path $ConfigPath), ($json + "`n"), $utf8NoBom)
 
-Run "git diff -- $ConfigPath"
+$secretValue = $config.apiBaseUrl
+$secretValue | gh secret set CATALYST_API_BASE_URL --repo $Repo
 
-$changed = (git status --short -- $ConfigPath)
-if (-not $changed) {
-  Write-Host "runtime-config.json is already current."
-  exit 0
-}
-
-Run "git add $ConfigPath"
-Run "git commit -m `"Update Pages runtime backend URL`""
-
-if (-not $NoPush) {
-  Run "git push origin main"
-  Write-Host "Pushed. GitHub Pages will redeploy from $Repo."
+if (-not $NoDeploy) {
+  Run "gh workflow run pages.yml --repo $Repo --ref main"
+  Write-Host "Updated CATALYST_API_BASE_URL and triggered GitHub Pages redeploy for $Repo."
 } else {
-  Write-Host "Committed locally. Push skipped because -NoPush was set."
+  Write-Host "Updated CATALYST_API_BASE_URL. Deploy trigger skipped because -NoDeploy was set."
 }
