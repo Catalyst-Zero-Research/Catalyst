@@ -39,9 +39,10 @@ jobs:
           GITHUB_PAGES: "true"
 
       - name: Configure runtime backend
-        if: ${{ secrets.CATALYST_API_BASE_URL != '' }}
         run: |
-          node -e "const fs=require('fs'); fs.writeFileSync('code/frontend/dist/runtime-config.json', JSON.stringify({ apiBaseUrl: process.env.CATALYST_API_BASE_URL }, null, 2) + '\n')"
+          if [ -n "$CATALYST_API_BASE_URL" ]; then
+            node -e "const fs=require('fs'); fs.writeFileSync('code/frontend/dist/runtime-config.json', JSON.stringify({ apiBaseUrl: process.env.CATALYST_API_BASE_URL }, null, 2) + '\n')"
+          fi
         env:
           CATALYST_API_BASE_URL: ${{ secrets.CATALYST_API_BASE_URL }}
 
