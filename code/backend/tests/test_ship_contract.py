@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from urllib import error
 
 from fastapi.testclient import TestClient
 
@@ -10,6 +11,7 @@ from catalyst.candidate_sets import CandidateSetStore
 from catalyst.local_api import app
 from catalyst.local_store import LocalCatalystStore
 from catalyst.preflight import run_preflight
+from catalyst.providers.gemini import generate_gemini_agent_turn
 from catalyst.screening import parse_requirements, screen_candidates
 from catalyst.session_store import SessionStore
 from catalyst.settings import load_settings
@@ -174,6 +176,58 @@ def test_agent_uses_local_tool_fallback_when_llm_unavailable(monkeypatch) -> Non
     assert response["candidate_results"]
     assert response["ui_actions"]
     assert any(action["type"] == "select_node" for action in response["ui_actions"])
+
+
+def test_gemini_provider_retries_configured_fallback_model(monkeypatch) -> None:
+    settings = load_settings(REPO_ROOT)
+    settings.providers.models["gemini"] = "gemini-primary-broken"
+    settings.providers.fallback_models["gemini"] = ["gemini-3.1-flash-lite"]
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+
+    requested_urls: list[str] = []
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def read(self) -> bytes:
+            return json.dumps(
+                {
+                    "candidates": [
+                        {
+                            "content": {
+                                "role": "model",
+                                "parts": [{"text": "Fallback model answered with full context."}],
+                            }
+                        }
+                    ],
+                    "usageMetadata": {"promptTokenCount": 11},
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(req, timeout=30):
+        requested_urls.append(req.full_url)
+        if "gemini-primary-broken" in req.full_url:
+            raise error.URLError("primary unavailable")
+        return FakeResponse()
+
+    monkeypatch.setattr("catalyst.providers.gemini.request.urlopen", fake_urlopen)
+
+    turn = generate_gemini_agent_turn(
+        settings,
+        contents=[{"role": "user", "parts": [{"text": "use all context"}]}],
+        system_instruction="full catalyst context",
+        temperature=0.1,
+        max_output_tokens=128,
+    )
+
+    assert turn["model"] == "gemini-3.1-flash-lite"
+    assert "Fallback model answered" in turn["text"]
+    assert any("gemini-primary-broken" in url for url in requested_urls)
+    assert any("gemini-3.1-flash-lite" in url for url in requested_urls)
 
 
 def test_agent_material_resolution_is_tool_executor_only(monkeypatch) -> None:

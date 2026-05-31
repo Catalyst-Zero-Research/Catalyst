@@ -3,6 +3,11 @@
   "product_name": "Catalyst",
   "providers": {
     "active_provider": null,
+    "fallback_models": {
+      "gemini": [
+        "gemini-3.1-flash-lite"
+      ]
+    },
     "models": {},
     "provider_order": [
       "gemini",

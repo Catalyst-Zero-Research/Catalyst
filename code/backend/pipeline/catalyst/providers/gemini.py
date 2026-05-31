@@ -9,6 +9,7 @@ from catalyst.settings import CatalystSettings, PROVIDER_ENV_KEYS
 
 
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+DEFAULT_GEMINI_FALLBACK_MODELS = ["gemini-3.1-flash-lite"]
 GEMINI_GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 
@@ -55,7 +56,45 @@ def generate_gemini_agent_turn(
     if not api_key:
         raise GeminiProviderError("GEMINI_API_KEY is not set.")
 
-    model = settings.providers.models.get("gemini") or DEFAULT_GEMINI_MODEL
+    models = _gemini_model_chain(settings)
+    errors: list[str] = []
+    for model in models:
+        try:
+            return _generate_gemini_agent_turn_with_model(
+                api_key,
+                model=model,
+                contents=contents,
+                system_instruction=system_instruction,
+                tools=tools,
+                temperature=temperature,
+                max_output_tokens=max_output_tokens,
+            )
+        except GeminiProviderError as exc:
+            errors.append(f"{model}: {exc}")
+    raise GeminiProviderError("Gemini API failed for all configured models: " + " | ".join(errors))
+
+
+def _gemini_model_chain(settings: CatalystSettings) -> list[str]:
+    primary = settings.providers.models.get("gemini") or DEFAULT_GEMINI_MODEL
+    fallback_models = settings.providers.fallback_models.get("gemini") or DEFAULT_GEMINI_FALLBACK_MODELS
+    chain: list[str] = []
+    for model in [primary, *fallback_models]:
+        clean = str(model).removeprefix("models/").strip()
+        if clean and clean not in chain:
+            chain.append(clean)
+    return chain or [DEFAULT_GEMINI_MODEL]
+
+
+def _generate_gemini_agent_turn_with_model(
+    api_key: str,
+    *,
+    model: str,
+    contents: list[dict[str, Any]],
+    system_instruction: str | None,
+    tools: list[dict[str, Any]] | None,
+    temperature: float,
+    max_output_tokens: int,
+) -> dict[str, Any]:
     model = model.removeprefix("models/")
     use_system_instruction = system_instruction
     request_contents = contents
@@ -88,7 +127,10 @@ def generate_gemini_agent_turn(
         raise GeminiProviderError(f"Gemini API request failed: {exc.reason}") from exc
 
     data = json.loads(raw)
-    return _extract_agent_turn(data, model)
+    turn = _extract_agent_turn(data, model)
+    if not turn["text"] and not turn["function_calls"]:
+        raise GeminiProviderError("Gemini returned no text or tool calls.")
+    return turn
 
 
 def _extract_agent_turn(data: dict[str, Any], model: str) -> dict[str, Any]:

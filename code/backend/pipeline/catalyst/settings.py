@@ -26,6 +26,7 @@ class ProviderSettings(BaseModel):
         default_factory=lambda: ["gemini", "groq", "mistral", "nvidia", "ollama_cloud", "ollama"]
     )
     models: dict[str, str] = Field(default_factory=dict)
+    fallback_models: dict[str, list[str]] = Field(default_factory=lambda: {"gemini": ["gemini-3.1-flash-lite"]})
 
 
 class ResearchSettings(BaseModel):
